@@ -8,5 +8,4 @@ $conn = mysqli_connect($host, $user, $pass, $db);
 if (!$conn) {
     die("Connexion impossible : " . mysqli_connect_error());
 }
-echo "Connexion réussie à la base de données '$db' !";
 ?>
