@@ -1,29 +1,43 @@
 <?php
+session_start();
 require 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nom = $_POST['nom'];
-    $prenom = $_POST['prenom'];
-    $email = $_POST['email'];
-    $phone = $_POST['telephone'];
-    $password = $_POST['password'];
+    $nom      = $_POST['nom'];
+    $prenom   = $_POST['prenom'];
+    $email    = $_POST['email'];
+    $phone    = $_POST['telephone'];
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    // Hasher le mot de passe pour la sécurité
-    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+    // Vérifier si email déjà utilisé
+    $check = $conn->prepare("SELECT id FROM clients WHERE email = ?");
+    $check->bind_param("s", $email);
+    $check->execute();
+    $check->store_result();
 
-    // Requête sécurisée avec prepared statement
-    $sql = "INSERT INTO clients (nom, prenom, email, telephone, mot_de_passe) 
-            VALUES (?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($conn, $sql);
-    mysqli_stmt_bind_param($stmt, "sssss", $nom, $prenom, $email, $phone, $password_hash);
-    
-    if (mysqli_stmt_execute($stmt)) {
-        header("Location: login.php?msg=success");
+    if ($check->num_rows > 0) {
+        header("Location: registre.html?error=email_exists");
+        exit();
+    }
+    $check->close();
+
+    // Insérer le nouveau client
+    $stmt = $conn->prepare("INSERT INTO clients (nom, prenom, email, telephone, mot_de_passe) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssss", $nom, $prenom, $email, $phone, $password);
+
+    if ($stmt->execute()) {
+        // ✅ Connecter automatiquement après inscription
+        $_SESSION['user_id']     = $conn->insert_id;
+        $_SESSION['user_nom']    = $nom;
+        $_SESSION['user_prenom'] = $prenom;
+        $_SESSION['success']     = "Inscription réussie ! Bienvenue " . $prenom . " 🎉";
+
+        header("Location: profil.php");
         exit();
     } else {
-        echo "Erreur : " . mysqli_error($conn);
+        header("Location: registre.html?error=server");
+        exit();
     }
-    
-    mysqli_stmt_close($stmt);
+    $stmt->close();
 }
 ?>
