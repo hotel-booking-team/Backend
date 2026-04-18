@@ -16,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $check->store_result();
 
     if ($check->num_rows > 0) {
-        header("Location: registre.html?error=email_exists");
+        header("Location: ../frontend/registre.html?error=email_exists");
         exit();
     }
     $check->close();
@@ -35,9 +35,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         header("Location: profil.php");
         exit();
     } else {
-        header("Location: registre.html?error=server");
+        header("Location: ../frontend/registre.html?error=server");
         exit();
     }
     $stmt->close();
+    
+    
 }
 ?>

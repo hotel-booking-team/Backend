@@ -4,7 +4,7 @@ require 'db.php';
 
 // Rediriger si non connecté
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.html");
+  header("Location: ../frontend/login.html");
     exit();
 }
 
@@ -252,6 +252,22 @@ $nom_complet = htmlspecialchars($user['prenom'] . ' ' . $user['nom']);
       text-transform: uppercase; padding: 6px 12px; border-radius: 20px;
     }
     .res-status.confirmed { background: rgba(22,101,52,.1); color: #166534; }
+    .res-status.cancelled { background: rgba(185,28,28,.1); color: #b91c1c; }
+    .res-actions { display: flex; align-items: center; gap: 10px; }
+    .btn-cancel {
+      border: 1px solid #b91c1c;
+      background: transparent;
+      color: #b91c1c;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-cancel:hover { background: #b91c1c; color: #fff; }
     .no-reservation { color: var(--muted); font-size: 0.9rem; font-style: italic; text-align: center; padding: 20px 0; }
 
     @media (max-width: 992px) {
@@ -275,7 +291,7 @@ $nom_complet = htmlspecialchars($user['prenom'] . ' ' . $user['nom']);
   <?php endif; ?>
 
   <nav class="navbar">
-    <a href="accueil.html" class="nav-logo">
+    <a href="../frontend/accueil.html" class="nav-logo">
       <div class="nav-logo-icon">M</div>
       <div>
         <div class="nav-logo-name">Mahari Hôtel</div>
@@ -283,10 +299,10 @@ $nom_complet = htmlspecialchars($user['prenom'] . ' ' . $user['nom']);
       </div>
     </a>
     <ul class="nav-links">
-      <li><a href="accueil.html">Accueil</a></li>
-      <li><a href="reservation.html">Réservation</a></li>
+      <li><a href="../frontend/accueil.html">Accueil</a></li>
+      <li><a href="../frontend/reservation.html">Réservation</a></li>
       <li class="active"><a href="profil.php">Profil</a></li>
-      <li><a href="services.html">Services</a></li>
+      <li><a href="../frontend/services.html">Services</a></li>
       <li><a href="logout.php">Déconnexion</a></li>
     </ul>
   </nav>
@@ -312,7 +328,7 @@ $nom_complet = htmlspecialchars($user['prenom'] . ' ' . $user['nom']);
             </a>
           </li>
           <li>
-            <a href="reservation.html">
+            <a href="../frontend/reservation.html">
               <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
               Réservations
             </a>
@@ -369,6 +385,12 @@ $nom_complet = htmlspecialchars($user['prenom'] . ' ' . $user['nom']);
         <ul class="reservation-list">
           <?php if ($history->num_rows > 0): ?>
             <?php while($row = $history->fetch_assoc()): ?>
+            <?php
+              $statutRaw = isset($row['statut']) ? mb_strtolower(trim((string)$row['statut'])) : 'confirmée';
+              $isCancelled = in_array($statutRaw, ['annulee', 'annulée', 'cancelled']);
+              $statusClass = $isCancelled ? 'cancelled' : 'confirmed';
+              $statusLabel = $isCancelled ? 'Annulée' : 'Confirmée';
+            ?>
             <li class="reservation-item">
               <div class="res-info">
                 <div class="res-icon">
@@ -383,7 +405,16 @@ $nom_complet = htmlspecialchars($user['prenom'] . ' ' . $user['nom']);
                   <span class="res-id">Résa. #EM-<?php echo $row['id']; ?></span>
                 </div>
               </div>
-              <span class="res-status confirmed">Confirmée</span>
+              <div class="res-actions">
+                <span class="res-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
+                <?php if (!$isCancelled): ?>
+                <form method="POST" action="reservation.php" onsubmit="return confirm('Confirmer l\'annulation de cette réservation ?');">
+                  <input type="hidden" name="action" value="cancel">
+                  <input type="hidden" name="reservation_id" value="<?php echo (int)$row['id']; ?>">
+                  <button type="submit" class="btn-cancel">Annuler</button>
+                </form>
+                <?php endif; ?>
+              </div>
             </li>
             <?php endwhile; ?>
           <?php else: ?>
